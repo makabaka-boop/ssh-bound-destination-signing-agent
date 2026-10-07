@@ -1,0 +1,27 @@
+services:
+  restricted-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: restricted-ssh-agent:demo
+    environment:
+      SOCKET_PATH: /run/restricted-ssh-agent/agent.sock
+      TARGET_USER: deploy
+    volumes:
+      - type: tmpfs
+        target: /run/restricted-ssh-agent
+        tmpfs:
+          mode: 700
+          uid: "1000"
+          gid: "1000"
+          size: 1048576
+    # Unix socket only: deliberately publish no TCP ports and make no
+    # outbound SSH connections.
+    network_mode: "none"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -S /run/restricted-ssh-agent/agent.sock"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+      start_period: 1s
